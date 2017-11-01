@@ -22,6 +22,10 @@ public class UserMealWithExceed {
         this.exceed = exceed;
     }
 
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
     public void setExceed(boolean exceed) {
         this.exceed = exceed;
     }

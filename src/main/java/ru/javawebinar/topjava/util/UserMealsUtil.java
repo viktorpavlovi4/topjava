@@ -7,10 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -38,33 +35,23 @@ public class UserMealsUtil {
                                                                    int caloriesPerDay) {
         //return filtered list with correctly exceeded field
         List<UserMealWithExceed> result = new ArrayList<>();
-        LocalDate yesterday = LocalDate.now();
-        LocalDateTime today = LocalDateTime.now();
-        int kalPerDay = 0;
+        Map<LocalDate, Integer> caloriesMap = new HashMap<>();
 
-        for (UserMeal userMeal : mealList) {
-            today = userMeal.getDateTime();
-            if (TimeUtil.isBetween(today.toLocalTime(),
-                    startTime,
-                    endTime)) {
-                result.add(new UserMealWithExceed(today,
-                        userMeal.getDescription(),
-                        userMeal.getCalories(),
-                        false));
-            }
+        for (UserMeal meal : mealList) {
+            LocalDateTime mealTime = meal.getDateTime();
+            Integer calories = meal.getCalories();
 
-            if (!yesterday.equals(today.toLocalDate())) {
-                result.get(result.size() - 1).setExceed(kalPerDay > caloriesPerDay);
-                kalPerDay = 0;
-            }
+            caloriesMap.put(mealTime.toLocalDate(), caloriesMap.get(mealTime.toLocalDate()) == null ? calories : caloriesMap.get(mealTime.toLocalDate()) + calories);
 
-            kalPerDay += userMeal.getCalories();
-            yesterday = userMeal.getDateTime().toLocalDate();
+            if (TimeUtil.isBetween(mealTime.toLocalTime(), startTime, endTime))
+                result.add(new UserMealWithExceed(mealTime, meal.getDescription(), meal.getCalories(), false));
         }
 
-        today = LocalDateTime.now();
-        if (!yesterday.equals(today.toLocalDate()))
-            result.get(result.size() - 1).setExceed(kalPerDay > caloriesPerDay);
+        for (UserMealWithExceed mealWithExceed : result) {
+            LocalDate mealWithExceedDate = mealWithExceed.getDateTime().toLocalDate();
+            if (caloriesMap.containsKey(mealWithExceedDate))
+                mealWithExceed.setExceed(caloriesMap.get(mealWithExceedDate) > caloriesPerDay);
+        }
 
         return result;
 
