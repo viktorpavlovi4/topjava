@@ -34,31 +34,28 @@ public class UserMealsUtil {
                                                                    LocalTime endTime,
                                                                    int caloriesPerDay) {
         //return filtered list with correctly exceeded field
-        List<UserMealWithExceed> result = new ArrayList<>();
-        Map<LocalDate, Integer> caloriesMap = new HashMap<>();
+        List<UserMealWithExceed> mealWithExceedList = new ArrayList<>();
+        Map<LocalDate, Integer> caloriesPerDayMap = new HashMap<>();
 
         for (UserMeal meal : mealList) {
             LocalDateTime mealTime = meal.getDateTime();
             Integer calories = meal.getCalories();
 
-            caloriesMap.put(mealTime.toLocalDate(), caloriesMap.get(mealTime.toLocalDate()) == null ? calories : caloriesMap.get(mealTime.toLocalDate()) + calories);
+            caloriesPerDayMap.merge(mealTime.toLocalDate(), meal.getCalories(), Integer::sum);
 
             if (TimeUtil.isBetween(mealTime.toLocalTime(), startTime, endTime))
-                result.add(new UserMealWithExceed(mealTime, meal.getDescription(), meal.getCalories(), false));
+                mealWithExceedList.add(new UserMealWithExceed(mealTime, meal.getDescription(), calories, false));
         }
 
-        for (UserMealWithExceed mealWithExceed : result) {
+        for (UserMealWithExceed mealWithExceed : mealWithExceedList) {
             LocalDate mealWithExceedDate = mealWithExceed.getDateTime().toLocalDate();
-            if (caloriesMap.containsKey(mealWithExceedDate))
-                mealWithExceed.setExceed(caloriesMap.get(mealWithExceedDate) > caloriesPerDay);
+            mealWithExceed.setExceed(caloriesPerDayMap.get(mealWithExceedDate) > caloriesPerDay);
         }
 
-        return result;
-
-        /*
-           Map<LocalDate, Integer> mealMap = mealList
+        return mealWithExceedList;
+        /*   Map<LocalDate, Integer> mealMap = mealList
                 .stream()
-                .collect(Collectors.toMap(m -> m.getDateTime().toLocalDate(), UserMeal::getCalories, (c1, c2) -> c1 + c2));
+                .collect(Collectors.toMap(m -> m.getDateTime().toLocalDate(), UserMeal::getCalories, Integer::sum));
 
         return mealList
                 .stream()
